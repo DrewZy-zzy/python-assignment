@@ -357,7 +357,7 @@ def check_availability():
 def record_entry():
     print("RECORD VEHICLE ENTRY")
 
-    plate = input("Enter plate number: ").upper()
+    plate = input("Enter plate number: ").upper().strip()
     if plate == "":
         print("Error: Plate cannot be empty!")
         return
@@ -394,7 +394,7 @@ def record_entry():
 
     time_now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    add_line(VEHICLES_FILE, f"{plate},{time_now},{space_id}")
+   
     add_line(LOGS_FILE, f"{plate},{time_now},Parked,{space_id},0")
 
     print(f"\nSuccess! Assigned to {space_id}")
@@ -404,13 +404,14 @@ def record_entry():
 def record_exit():
     print("\n=== RECORD VEHICLE EXIT ===")
 
-    plate = input("Enter plate number: ").upper()
+    plate = input("Enter plate number: ").upper().strip()
+
     if plate == "":
         print("Error: Plate cannot be empty!")
         return
 
 
-    lines = read_file(VEHICLES_FILE)
+    lines = read_file(LOGS_FILE)
     found = False
     entry_time = ""
     space_id = ""
@@ -418,10 +419,13 @@ def record_exit():
 
     for line in lines:
         parts = line.strip().split(',')
-        if parts[0] == plate:
+        if parts[0] == plate and part[2] == "Parked":
             found = True
             entry_time = parts[1]
-            space_id = parts[2]
+            space_id = parts[3]
+            exit_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            new_logs.append(f"{plate},{entry_time},{exit_time},{space_id},5.0")
+
         else:
             new_lines.append(line)
 
@@ -962,29 +966,36 @@ def request_permit():
 def view_parking_history():
     print("\n--- View Parking History ---")
     plate = input("Enter Plate Number: ").strip().upper()
+    
+    
+    lines = read_file(LOGS_FILE)
+    
+    if not lines:
+        print("No parking logs found.")
+        return
 
     print(f"\nHistory for [{plate}]:")
-    print(f"{'Entry Time':<20} | {'Exit Time':<20} | {'Fee (RM)'}")
-    print("-" * 55)
+    
+    print(f"{'Entry Time':<20} | {'Exit Time':<20} | {'Slot':<10} | {'Fee'}")
+    print("-" * 70)
 
     found_any = False
-    try:
-        if not os.path.exists(LOGS_FILE):
-            print("No parking logs found.")
-            return
+    for line in lines:
+        data = line.strip().split(',')
+       
+        if len(data) >= 4 and data[0] == plate:
+           
+            entry_t = data[1]
+            exit_t = data[2] if data[2] != "Parked" else "Still Parked"
+            slot = data[3]
+            
+            fee = f"RM{data[4]}" if len(data) > 4 else "RM0.0"
+            
+            print(f"{entry_t:<20} | {exit_t:<20} | {slot:<10} | {fee}")
+            found_any = True
 
-        with open(LOGS_FILE, "r") as f:
-            for line in f:
-                data = line.strip().split(',')
-                if len(data) >= 4 and data[0] == plate:
-                    print(f"{data[1]:<20} | {data[2]:<20} | {data[3]}")
-                    found_any = True
-
-        if not found_any:
-            print("No history found for this vehicle.")
-
-    except Exception as e:
-        print(f"Error reading logs: {e}")
+    if not found_any:
+        print("No history found for this vehicle.")
 
 
 def is_plate_registered(plate):
@@ -1048,4 +1059,5 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
