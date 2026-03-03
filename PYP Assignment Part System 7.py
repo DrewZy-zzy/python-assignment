@@ -633,7 +633,7 @@ def issue_permit():
             return
     name = input("Enter Owner Name: ").strip()
     plate = input("Enter Plate Number: ").strip()
-    # --- NEW: Dynamically fetch permit types from Admin's file ---
+    # --- Dynamically fetch permit types from Admin's file ---
     types_lines = read_file(TYPES_FILE)
     available_types = []
     for line in types_lines:
@@ -1059,6 +1059,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
